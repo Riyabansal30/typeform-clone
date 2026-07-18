@@ -9,7 +9,8 @@ A full-stack form builder inspired by Typeform. Create and manage forms, preview
 ## Demo
 
 - **Repository:** https://github.com/Riyabansal30/typeform-clone
-- **Live Demo:** Coming soon
+- **Frontend (Live Demo):** https://typeform-clone-opal-five.vercel.app
+- **Backend API:** https://typeform-clone-bfbj.onrender.com
 
 ---
 
