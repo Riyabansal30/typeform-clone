@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List
@@ -109,3 +110,39 @@ def duplicate_form(form_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(duplicated)
     return duplicated
+
+
+@router.post("/forms/{form_id}/publish", response_model=schemas.FormResponse)
+def publish_form(form_id: int, db: Session = Depends(get_db)):
+    form = db.query(models.Form).filter(models.Form.id == form_id).first()
+    if not form:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Form not found")
+
+    if not form.public_slug:
+        while True:
+            slug = uuid4().hex[:12]
+            existing = db.query(models.Form).filter(models.Form.public_slug == slug).first()
+            if not existing:
+                form.public_slug = slug
+                break
+
+    form.status = "published"
+    form.published_at = datetime.utcnow()
+    form.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(form)
+    return form
+
+
+@router.post("/forms/{form_id}/unpublish", response_model=schemas.FormResponse)
+def unpublish_form(form_id: int, db: Session = Depends(get_db)):
+    form = db.query(models.Form).filter(models.Form.id == form_id).first()
+    if not form:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Form not found")
+
+    form.status = "draft"
+    form.published_at = None
+    form.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(form)
+    return form

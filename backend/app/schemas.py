@@ -99,3 +99,27 @@ class QuestionResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+
+class PublicFormResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    thank_you_message: str
+    public_slug: str
+    questions: List[QuestionResponse]
+
+
+class AnswerInput(BaseModel):
+    question_id: int
+    value: str
+
+
+class SubmissionCreate(BaseModel):
+    answers: List[AnswerInput]
+
+
+class SubmissionResponse(BaseModel):
+    id: int
+    submitted_at: datetime
+    thank_you_message: str

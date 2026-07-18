@@ -177,3 +177,58 @@ export async function deleteQuestion(id: number): Promise<void> {
     throw new Error("Failed to delete question");
   }
 }
+
+
+export interface PublicForm {
+  id: number;
+  title: string;
+  description: string | null;
+  thank_you_message: string;
+  public_slug: string;
+  questions: Question[];
+}
+
+export interface SubmissionAnswerInput {
+  question_id: number;
+  value: string;
+}
+
+export interface SubmissionResponse {
+  id: number;
+  submitted_at: string;
+  thank_you_message: string;
+}
+
+export async function publishForm(id: number): Promise<Form> {
+  const response = await fetch(`${API_BASE_URL}/api/forms/${id}/publish`, { method: "POST" });
+  if (!response.ok) throw new Error("Failed to publish form");
+  return response.json();
+}
+
+export async function unpublishForm(id: number): Promise<Form> {
+  const response = await fetch(`${API_BASE_URL}/api/forms/${id}/unpublish`, { method: "POST" });
+  if (!response.ok) throw new Error("Failed to unpublish form");
+  return response.json();
+}
+
+export async function getPublicForm(slug: string): Promise<PublicForm> {
+  const response = await fetch(`${API_BASE_URL}/api/public/forms/${slug}`, { cache: "no-store" });
+  if (!response.ok) throw new Error("Published form not found");
+  return response.json();
+}
+
+export async function submitPublicForm(
+  slug: string,
+  answers: SubmissionAnswerInput[],
+): Promise<SubmissionResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/public/forms/${slug}/submissions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ answers }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.detail ?? "Failed to submit form");
+  }
+  return response.json();
+}

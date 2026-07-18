@@ -12,6 +12,8 @@ import {
   Question,
   QuestionType,
   QuestionUpdateInput,
+  publishForm,
+  unpublishForm,
   updateQuestion,
 } from '@/lib/api';
 
@@ -321,6 +323,22 @@ export default function FormBuilderPage() {
     }
   };
 
+  const handlePublishToggle = async () => {
+    if (!form) return;
+    try {
+      setActionLoading(true);
+      setError(null);
+      const updated = form.status === 'published'
+        ? await unpublishForm(form.id)
+        : await publishForm(form.id);
+      setForm(updated);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update publish status.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return <main className="flex min-h-screen items-center justify-center">Loading builder...</main>;
   }
@@ -344,9 +362,25 @@ export default function FormBuilderPage() {
             </Link>
             <h1 className="mt-1 text-2xl font-bold">{form.title}</h1>
           </div>
-          <span className="rounded bg-zinc-100 px-2 py-1 text-xs font-semibold uppercase dark:bg-zinc-800">
-            {form.status}
-          </span>
+          <div className="flex items-center gap-3">
+            {form.status === 'published' && form.public_slug && (
+              <Link
+                href={`/forms/public/${form.public_slug}`}
+                target="_blank"
+                className="text-sm font-semibold text-indigo-600 dark:text-indigo-400"
+              >
+                Open public form
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={handlePublishToggle}
+              disabled={actionLoading}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${form.status === 'published' ? 'bg-zinc-600' : 'bg-emerald-600'}`}
+            >
+              {form.status === 'published' ? 'Unpublish' : 'Publish'}
+            </button>
+          </div>
         </div>
       </header>
 

@@ -23,6 +23,7 @@ class Form(Base):
         cascade="all, delete-orphan",
         order_by="Question.display_order",
     )
+    submissions = relationship("Submission", back_populates="form", cascade="all, delete-orphan")
 
 
 class Question(Base):
@@ -39,3 +40,27 @@ class Question(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     form = relationship("Form", back_populates="questions")
+    answers = relationship("Answer", back_populates="question", cascade="all, delete-orphan")
+
+
+class Submission(Base):
+    __tablename__ = "submissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    form_id = Column(Integer, ForeignKey("forms.id"), nullable=False, index=True)
+    submitted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    form = relationship("Form", back_populates="submissions")
+    answers = relationship("Answer", back_populates="submission", cascade="all, delete-orphan")
+
+
+class Answer(Base):
+    __tablename__ = "answers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    submission_id = Column(Integer, ForeignKey("submissions.id"), nullable=False, index=True)
+    question_id = Column(Integer, ForeignKey("questions.id"), nullable=False, index=True)
+    value = Column(Text, nullable=False)
+
+    submission = relationship("Submission", back_populates="answers")
+    question = relationship("Question", back_populates="answers")
