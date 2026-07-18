@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   getForms,
@@ -30,6 +30,10 @@ export default function FormsDashboard() {
   const [deleteFormTitle, setDeleteFormTitle] = useState('');
 
   const [actionLoading, setActionLoading] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // Load / Refresh forms
   const loadForms = async () => {
@@ -73,6 +77,55 @@ export default function FormsDashboard() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (openMenuId === null) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenMenuId(null);
+        menuButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openMenuId]);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(null), 2000);
+  };
+
+  const getPublicUrl = (form: Form) => (
+    `${window.location.origin}/forms/public/${form.public_slug}`
+  );
+
+  const handleCopyLink = async (form: Form) => {
+    try {
+      await navigator.clipboard.writeText(getPublicUrl(form));
+      showToast('Link copied');
+    } catch {
+      showToast('Could not copy link');
+    } finally {
+      setOpenMenuId(null);
+    }
+  };
+
+  const handleOpenForm = (form: Form) => {
+    window.open(getPublicUrl(form), '_blank', 'noopener,noreferrer');
+    setOpenMenuId(null);
+  };
+
 
   // Handle Form Creation
   const handleCreateForm = async (e: React.FormEvent) => {
@@ -287,55 +340,105 @@ export default function FormsDashboard() {
                 <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-400">
                   <span>Created {formatDate(form.created_at)}</span>
 
-                  <div className="flex items-center gap-1">
+                  <div className="relative flex items-center gap-1" ref={openMenuId === form.id ? menuRef : null}>
                     <Link
                       href={`/forms/${form.id}`}
-                      className="px-2 py-1.5 rounded text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors"
+                      className="rounded px-3 py-1.5 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
                     >
                       Build
                     </Link>
-
-                    {/* Rename */}
                     <button
-                      onClick={() => {
-                        setRenameFormId(form.id);
-                        setRenameTitle(form.title);
-                        setShowRenameModal(true);
+                      type="button"
+                      aria-label={`Actions for ${form.title}`}
+                      aria-haspopup="menu"
+                      aria-expanded={openMenuId === form.id}
+                      onClick={(event) => {
+                        menuButtonRef.current = event.currentTarget;
+                        setOpenMenuId((current) => current === form.id ? null : form.id);
                       }}
-                      className="p-1.5 rounded text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                      title="Rename Form"
+                      className="rounded px-2 py-1 text-xl leading-none text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
+                      ⋮
                     </button>
 
-                    {/* Duplicate */}
-                    <button
-                      onClick={() => handleDuplicate(form.id)}
-                      className="p-1.5 rounded text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                      title="Duplicate Form"
-                      disabled={actionLoading}
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                      </svg>
-                    </button>
+                    {openMenuId === form.id && (
+                      <div
+                        role="menu"
+                        className="absolute right-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-lg border border-zinc-200 bg-white py-1 text-sm text-zinc-700 shadow-xl dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          disabled
+                          title="Coming soon"
+                          className="flex w-full items-center justify-between px-3 py-2 text-left text-zinc-400 disabled:cursor-not-allowed"
+                        >
+                          Responses
+                          <span className="text-[10px] uppercase">Soon</span>
+                        </button>
 
-                    {/* Delete */}
-                    <button
-                      onClick={() => {
-                        setDeleteFormId(form.id);
-                        setDeleteFormTitle(form.title);
-                        setShowDeleteModal(true);
-                      }}
-                      className="p-1.5 rounded text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
-                      title="Delete Form"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                        {form.status === 'published' && form.public_slug && (
+                          <>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => handleOpenForm(form)}
+                              className="w-full px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            >
+                              Open Form
+                            </button>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => void handleCopyLink(form)}
+                              className="w-full px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            >
+                              Copy Link
+                            </button>
+                          </>
+                        )}
+
+                        <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setOpenMenuId(null);
+                            setRenameFormId(form.id);
+                            setRenameTitle(form.title);
+                            setShowRenameModal(true);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        >
+                          Rename / Edit
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          disabled={actionLoading}
+                          onClick={() => {
+                            setOpenMenuId(null);
+                            void handleDuplicate(form.id);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-zinc-100 disabled:opacity-50 dark:hover:bg-zinc-800"
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setOpenMenuId(null);
+                            setDeleteFormId(form.id);
+                            setDeleteFormTitle(form.title);
+                            setShowDeleteModal(true);
+                          }}
+                          className="w-full px-3 py-2 text-left text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -343,6 +446,16 @@ export default function FormsDashboard() {
           </div>
         )}
       </main>
+
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-lg dark:bg-white dark:text-zinc-900"
+        >
+          {toastMessage}
+        </div>
+      )}
 
       {/* CREATE FORM MODAL */}
       {showCreateModal && (
