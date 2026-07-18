@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   getForms,
   createForm,
@@ -287,6 +288,13 @@ export default function FormsDashboard() {
                   <span>Created {formatDate(form.created_at)}</span>
 
                   <div className="flex items-center gap-1">
+                    <Link
+                      href={`/forms/${form.id}`}
+                      className="px-2 py-1.5 rounded text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors"
+                    >
+                      Build
+                    </Link>
+
                     {/* Rename */}
                     <button
                       onClick={() => {

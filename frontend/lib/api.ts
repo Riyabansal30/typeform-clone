@@ -29,12 +29,54 @@ export interface FormUpdateInput {
   published_at?: string | null;
 }
 
+export type QuestionType =
+  | "short_text"
+  | "long_text"
+  | "email"
+  | "number"
+  | "multiple_choice";
+
+export interface Question {
+  id: number;
+  form_id: number;
+  text: string;
+  question_type: QuestionType;
+  is_required: boolean;
+  display_order: number;
+  options: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuestionCreateInput {
+  text: string;
+  question_type: QuestionType;
+  is_required?: boolean;
+  options?: string[] | null;
+}
+
+export interface QuestionUpdateInput {
+  text?: string;
+  question_type?: QuestionType;
+  is_required?: boolean;
+  display_order?: number;
+  options?: string[] | null;
+}
+
 export async function getForms(): Promise<Form[]> {
   const response = await fetch(`${API_BASE_URL}/api/forms`, {
     cache: "no-store",
   });
   if (!response.ok) {
     throw new Error("Failed to fetch forms");
+  }
+  return response.json();
+}
+
+export async function getForm(id: number): Promise<Form> {
+  const response = await fetch(`${API_BASE_URL}/api/forms/${id}`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error("Failed to fetch form");
   }
   return response.json();
 }
@@ -84,4 +126,54 @@ export async function duplicateForm(id: number): Promise<Form> {
     throw new Error("Failed to duplicate form");
   }
   return response.json();
+}
+
+
+export async function getQuestions(formId: number): Promise<Question[]> {
+  const response = await fetch(`${API_BASE_URL}/api/forms/${formId}/questions`, {
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch questions");
+  }
+  return response.json();
+}
+
+export async function createQuestion(
+  formId: number,
+  input: QuestionCreateInput,
+): Promise<Question> {
+  const response = await fetch(`${API_BASE_URL}/api/forms/${formId}/questions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to create question");
+  }
+  return response.json();
+}
+
+export async function updateQuestion(
+  id: number,
+  input: QuestionUpdateInput,
+): Promise<Question> {
+  const response = await fetch(`${API_BASE_URL}/api/questions/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to update question");
+  }
+  return response.json();
+}
+
+export async function deleteQuestion(id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/questions/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to delete question");
+  }
 }
