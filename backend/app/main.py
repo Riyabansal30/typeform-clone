@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,14 +11,22 @@ from app.api.questions import router as questions_router
 from app.api.public_forms import router as public_forms_router
 from app.api.submissions import router as submissions_router
 
-# Create database tables automatically when FastAPI starts
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Typeform Clone API")
 
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000",
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

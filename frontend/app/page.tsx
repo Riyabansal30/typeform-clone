@@ -15,8 +15,6 @@ export default function FormsDashboard() {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Modal triggers & form values
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createTitle, setCreateTitle] = useState('');
   const [createDesc, setCreateDesc] = useState('');
@@ -34,8 +32,6 @@ export default function FormsDashboard() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
-
-  // Load / Refresh forms
   const loadForms = async () => {
     try {
       setLoading(true);
@@ -43,7 +39,6 @@ export default function FormsDashboard() {
       setForms(data);
       setError(null);
     } catch (err: unknown) {
-      console.error(err);
       const msg = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to fetch forms. Is the backend server running? (${msg})`);
     } finally {
@@ -61,7 +56,6 @@ export default function FormsDashboard() {
           setError(null);
         }
       } catch (err: unknown) {
-        console.error(err);
         const msg = err instanceof Error ? err.message : 'Unknown error';
         if (active) {
           setError(`Failed to fetch forms. Is the backend server running? (${msg})`);
@@ -125,9 +119,6 @@ export default function FormsDashboard() {
     window.open(getPublicUrl(form), '_blank', 'noopener,noreferrer');
     setOpenMenuId(null);
   };
-
-
-  // Handle Form Creation
   const handleCreateForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createTitle.trim()) return;
@@ -150,8 +141,6 @@ export default function FormsDashboard() {
       setActionLoading(false);
     }
   };
-
-  // Handle Form Duplication
   const handleDuplicate = async (id: number) => {
     try {
       setActionLoading(true);
@@ -164,8 +153,6 @@ export default function FormsDashboard() {
       setActionLoading(false);
     }
   };
-
-  // Handle Form Rename
   const handleRenameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!renameFormId || !renameTitle.trim()) return;
@@ -184,8 +171,6 @@ export default function FormsDashboard() {
       setActionLoading(false);
     }
   };
-
-  // Handle Form Deletion
   const handleDeleteSubmit = async () => {
     if (!deleteFormId) return;
 
