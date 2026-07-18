@@ -338,7 +338,15 @@ export default function FormsDashboard() {
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-400">
-                  <span>Created {formatDate(form.created_at)}</span>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+                    <Link
+                      href={`/forms/${form.id}/responses`}
+                      className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+                    >
+                      {form.response_count} {form.response_count === 1 ? 'Response' : 'Responses'}
+                    </Link>
+                    <span>Updated {formatDate(form.updated_at)}</span>
+                  </div>
 
                   <div className="relative flex items-center gap-1" ref={openMenuId === form.id ? menuRef : null}>
                     <Link
@@ -366,17 +374,6 @@ export default function FormsDashboard() {
                         role="menu"
                         className="absolute right-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-lg border border-zinc-200 bg-white py-1 text-sm text-zinc-700 shadow-xl dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
                       >
-                        <button
-                          type="button"
-                          role="menuitem"
-                          disabled
-                          title="Coming soon"
-                          className="flex w-full items-center justify-between px-3 py-2 text-left text-zinc-400 disabled:cursor-not-allowed"
-                        >
-                          Responses
-                          <span className="text-[10px] uppercase">Soon</span>
-                        </button>
-
                         {form.status === 'published' && form.public_slug && (
                           <>
                             <button

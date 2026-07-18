@@ -1,6 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, Response
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -11,9 +12,16 @@ router = APIRouter()
 
 @router.get("/forms", response_model=List[schemas.FormResponse])
 def get_forms(db: Session = Depends(get_db)):
-    # Returns newest forms first
-    forms = db.query(models.Form).order_by(models.Form.created_at.desc()).all()
-    return forms
+    rows = (
+        db.query(models.Form, func.count(models.Submission.id).label("response_count"))
+        .outerjoin(models.Submission, models.Submission.form_id == models.Form.id)
+        .group_by(models.Form.id)
+        .order_by(models.Form.created_at.desc())
+        .all()
+    )
+    for form, response_count in rows:
+        form.response_count = response_count
+    return [form for form, _ in rows]
 
 @router.post("/forms", response_model=schemas.FormResponse, status_code=status.HTTP_201_CREATED)
 def create_form(form_in: schemas.FormCreate, db: Session = Depends(get_db)):

@@ -7,6 +7,7 @@ from app.api.health import router as health_router
 from app.api.forms import router as forms_router
 from app.api.questions import router as questions_router
 from app.api.public_forms import router as public_forms_router
+from app.api.submissions import router as submissions_router
 
 # Create database tables automatically when FastAPI starts
 Base.metadata.create_all(bind=engine)
@@ -25,3 +26,4 @@ app.include_router(health_router, prefix="/api")
 app.include_router(forms_router, prefix="/api")
 app.include_router(questions_router, prefix="/api")
 app.include_router(public_forms_router, prefix="/api")
+app.include_router(submissions_router, prefix="/api")

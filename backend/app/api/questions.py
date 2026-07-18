@@ -80,6 +80,7 @@ def create_question(form_id: int, question_in: schemas.QuestionCreate, db: Sessi
         options=question_in.options,
     )
     db.add(question)
+    form.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(question)
     return question
@@ -124,7 +125,11 @@ def update_question(question_id: int, question_in: schemas.QuestionUpdate, db: S
     for field, value in update_data.items():
         setattr(question, field, value)
 
-    question.updated_at = datetime.utcnow()
+    changed_at = datetime.utcnow()
+    question.updated_at = changed_at
+    db.query(models.Form).filter(models.Form.id == question.form_id).update(
+        {models.Form.updated_at: changed_at}
+    )
     db.commit()
     db.refresh(question)
     return question
@@ -143,6 +148,9 @@ def delete_question(question_id: int, db: Session = Depends(get_db)):
     ).update(
         {models.Question.display_order: models.Question.display_order - 1},
         synchronize_session=False,
+    )
+    db.query(models.Form).filter(models.Form.id == form_id).update(
+        {models.Form.updated_at: datetime.utcnow()}
     )
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

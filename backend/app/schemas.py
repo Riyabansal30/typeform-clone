@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, field_validator, model_validator
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 class FormCreate(BaseModel):
     title: str
@@ -27,6 +27,7 @@ class FormResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     published_at: Optional[datetime] = None
+    response_count: int = 0
 
     model_config = {
         "from_attributes": True
@@ -123,3 +124,84 @@ class SubmissionResponse(BaseModel):
     id: int
     submitted_at: datetime
     thank_you_message: str
+
+
+class OwnerSubmissionListItem(BaseModel):
+    id: int
+    submitted_at: datetime
+    answer_count: int
+
+
+class OwnerAnswerResponse(BaseModel):
+    question_id: int
+    question_title: str
+    question_type: QuestionType
+    value: Optional[str] = None
+
+
+class OwnerSubmissionDetail(BaseModel):
+    id: int
+    submitted_at: datetime
+    answers: List[OwnerAnswerResponse]
+
+
+class BulkDeleteSubmissionsRequest(BaseModel):
+    submission_ids: List[int]
+
+    @field_validator("submission_ids")
+    @classmethod
+    def validate_submission_ids(cls, value: List[int]):
+        if not value or any(submission_id < 1 for submission_id in value):
+            raise ValueError("At least one valid submission id is required")
+        if len(value) != len(set(value)):
+            raise ValueError("Submission ids must be unique")
+        return value
+
+
+class ResultsForm(BaseModel):
+    id: int
+    title: str
+
+
+class ResultsQuestion(BaseModel):
+    id: int
+    title: str
+    type: QuestionType
+    position: int
+    options: Optional[List[str]] = None
+
+
+class ResultsSubmission(BaseModel):
+    id: int
+    submitted_at: datetime
+    answers: Dict[str, str]
+
+
+class SummaryOption(BaseModel):
+    value: str
+    count: int
+    percentage: float
+
+
+class QuestionSummary(BaseModel):
+    question_id: int
+    title: str
+    type: QuestionType
+    answered_count: int
+    unanswered_count: int
+    minimum: Optional[float] = None
+    maximum: Optional[float] = None
+    average: Optional[float] = None
+    options: Optional[List[SummaryOption]] = None
+
+
+class ResultsSummary(BaseModel):
+    total_responses: int
+    questions: List[QuestionSummary]
+
+
+class OwnerResultsResponse(BaseModel):
+    form: ResultsForm
+    questions: List[ResultsQuestion]
+    submissions: List[ResultsSubmission]
+    summary: ResultsSummary
