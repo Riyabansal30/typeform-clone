@@ -1,6 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.database import engine, Base
+from app import models
+from app.api.health import router as health_router
+from app.api.forms import router as forms_router
+
+# Create database tables automatically when FastAPI starts
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(title="Typeform Clone API")
 
 app.add_middleware(
@@ -11,7 +19,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/api/health")
-def health_check():
-    return {"status": "ok"}
+app.include_router(health_router, prefix="/api")
+app.include_router(forms_router, prefix="/api")
