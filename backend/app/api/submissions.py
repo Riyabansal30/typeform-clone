@@ -125,14 +125,23 @@ def get_form_results(form_id: int, db: Session = Depends(get_db)):
             unanswered_count=total_responses - answered_count,
         )
 
-        if question.question_type == "number" and values:
+        if question.question_type in ("number", "rating") and values:
             numbers = [float(value) for value in values]
             summary.minimum = min(numbers)
             summary.maximum = max(numbers)
             summary.average = round(sum(numbers) / len(numbers), 2)
-        elif question.question_type == "multiple_choice":
+
+        if question.question_type in ("multiple_choice", "dropdown", "yes_no", "rating"):
+            if question.question_type == "yes_no":
+                configured_values = ["Yes", "No"]
+            elif question.question_type == "rating":
+                maximum = int((question.options or ["5"])[0])
+                configured_values = [str(value) for value in range(1, maximum + 1)]
+            else:
+                configured_values = question.options or []
+
             summary.options = []
-            for option in question.options or []:
+            for option in configured_values:
                 count = values.count(option)
                 percentage = round((count / answered_count) * 100, 2) if answered_count else 0
                 summary.options.append(

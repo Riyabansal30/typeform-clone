@@ -35,7 +35,10 @@ export type QuestionType =
   | "long_text"
   | "email"
   | "number"
-  | "multiple_choice";
+  | "multiple_choice"
+  | "dropdown"
+  | "yes_no"
+  | "rating";
 
 export interface Question {
   id: number;

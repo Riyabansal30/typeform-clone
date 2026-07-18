@@ -34,7 +34,7 @@ class FormResponse(BaseModel):
     }
 
 
-QuestionType = Literal["short_text", "long_text", "email", "number", "multiple_choice"]
+QuestionType = Literal["short_text", "long_text", "email", "number", "multiple_choice", "dropdown", "yes_no", "rating"]
 
 
 class QuestionCreate(BaseModel):
@@ -52,15 +52,30 @@ class QuestionCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_options(self):
-        if self.question_type == "multiple_choice":
-            if not self.options or len(self.options) < 2:
-                raise ValueError("Multiple-choice questions require at least two options")
+        if self.question_type in ("multiple_choice", "dropdown"):
+            minimum = 2 if self.question_type == "multiple_choice" else 1
+            if not self.options or len(self.options) < minimum:
+                raise ValueError(f"{self.question_type} requires at least {minimum} option(s)")
             cleaned_options = [option.strip() for option in self.options]
             if any(not option for option in cleaned_options):
-                raise ValueError("Multiple-choice options cannot be blank")
+                raise ValueError("Options cannot be blank")
+            if len(cleaned_options) != len(set(cleaned_options)):
+                raise ValueError("Options must be unique")
             self.options = cleaned_options
+        elif self.question_type == "rating":
+            if not self.options:
+                self.options = ["5"]
+            if not self.options or len(self.options) != 1:
+                raise ValueError("Rating requires one maximum value")
+            try:
+                maximum = int(self.options[0])
+            except (TypeError, ValueError):
+                raise ValueError("Rating maximum must be an integer")
+            if maximum < 3 or maximum > 10:
+                raise ValueError("Rating maximum must be between 3 and 10")
+            self.options = [str(maximum)]
         elif self.options is not None:
-            raise ValueError("Options are only allowed for multiple-choice questions")
+            raise ValueError("Options are not allowed for this question type")
         return self
 
 

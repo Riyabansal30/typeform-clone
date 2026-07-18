@@ -115,6 +115,16 @@ def duplicate_form(form_id: int, db: Session = Depends(get_db)):
         published_at=None
     )
     db.add(duplicated)
+    db.flush()
+    for question in original_form.questions:
+        db.add(models.Question(
+            form_id=duplicated.id,
+            text=question.text,
+            question_type=question.question_type,
+            is_required=question.is_required,
+            display_order=question.display_order,
+            options=list(question.options) if question.options is not None else None,
+        ))
     db.commit()
     db.refresh(duplicated)
     return duplicated

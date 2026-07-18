@@ -5,69 +5,10 @@ import { useParams } from 'next/navigation';
 import {
   getPublicForm,
   PublicForm,
-  Question,
   submitPublicForm,
 } from '@/lib/api';
 
-function AnswerInput({
-  question,
-  value,
-  onChange,
-}: {
-  question: Question;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  if (question.question_type === 'long_text') {
-    return (
-      <textarea
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        rows={5}
-        autoFocus
-        className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-lg outline-none focus:ring-2 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
-      />
-    );
-  }
-
-  if (question.question_type === 'multiple_choice') {
-    return (
-      <div className="space-y-3">
-        {(question.options ?? []).map((option) => (
-          <label
-            key={option}
-            className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 ${value === option ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30' : 'border-zinc-300 dark:border-zinc-700'}`}
-          >
-            <input
-              type="radio"
-              name={`question-${question.id}`}
-              value={option}
-              checked={value === option}
-              onChange={() => onChange(option)}
-            />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
-    );
-  }
-
-  const inputType = question.question_type === 'email'
-    ? 'email'
-    : question.question_type === 'number'
-      ? 'number'
-      : 'text';
-
-  return (
-    <input
-      type={inputType}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      autoFocus
-      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-lg outline-none focus:ring-2 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
-    />
-  );
-}
+import { QuestionInput } from '@/components/question-input';
 
 export default function PublicFormPage() {
   const params = useParams<{ slug: string }>();
@@ -211,9 +152,10 @@ export default function PublicFormPage() {
           {currentQuestion.is_required && <span className="ml-1 text-red-500">*</span>}
         </h1>
 
-        <AnswerInput
+        <QuestionInput
           question={currentQuestion}
           value={answers[currentQuestion.id] ?? ''}
+          autoFocus
           onChange={(value) => {
             setAnswers((current) => ({ ...current, [currentQuestion.id]: value }));
             setError(null);

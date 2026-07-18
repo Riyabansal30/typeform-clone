@@ -95,11 +95,27 @@ def create_submission(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Invalid number for question {question.id}",
                 )
-        if question.question_type == "multiple_choice" and value not in (question.options or []):
+        if question.question_type in ("multiple_choice", "dropdown") and value not in (question.options or []):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"Invalid option for question {question.id}",
             )
+        if question.question_type == "yes_no" and value not in ("Yes", "No"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid Yes/No value for question {question.id}",
+            )
+        if question.question_type == "rating":
+            try:
+                maximum = int((question.options or ["5"])[0])
+                rating = int(value)
+                if str(rating) != value or rating < 1 or rating > maximum:
+                    raise ValueError
+            except (TypeError, ValueError):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Invalid rating for question {question.id}",
+                )
 
     submission = models.Submission(form_id=form.id)
     submission.answers = [

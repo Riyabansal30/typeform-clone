@@ -9,6 +9,7 @@ import {
   getFormResults,
   QuestionSummary,
 } from '@/lib/api';
+import { getRatingMaximum } from '@/components/question-input';
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString(undefined, {
@@ -31,7 +32,7 @@ function SummaryCard({ question }: { question: QuestionSummary }) {
         <div><span className="block font-bold">{question.unanswered_count}</span><span className="text-zinc-500">Unanswered</span></div>
       </div>
 
-      {question.type === 'number' && (
+      {(question.type === 'number' || question.type === 'rating') && (
         <div className="mt-4 grid grid-cols-3 gap-2 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
           <div><span className="block text-xs text-zinc-500">Average</span>{formatNumber(question.average)}</div>
           <div><span className="block text-xs text-zinc-500">Minimum</span>{formatNumber(question.minimum)}</div>
@@ -39,7 +40,7 @@ function SummaryCard({ question }: { question: QuestionSummary }) {
         </div>
       )}
 
-      {question.type === 'multiple_choice' && (
+      {['multiple_choice', 'dropdown', 'yes_no', 'rating'].includes(question.type) && (
         <div className="mt-4 space-y-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
           {(question.options ?? []).map((option) => (
             <div key={option.value}>
@@ -255,9 +256,12 @@ export default function ResponsesPage() {
                       <td className="whitespace-nowrap px-4 py-3 text-zinc-500">{formatDateTime(submission.submitted_at)}</td>
                       {results.questions.map((question) => {
                         const answer = submission.answers[String(question.id)]?.trim();
+                        const displayAnswer = answer && question.type === 'rating'
+                          ? `${answer} / ${getRatingMaximum(question)}`
+                          : answer;
                         return (
                           <td key={question.id} className="max-w-xs whitespace-pre-wrap break-words px-4 py-3 align-top">
-                            {answer || <span className="text-zinc-400">—</span>}
+                            {displayAnswer || <span className="text-zinc-400">—</span>}
                           </td>
                         );
                       })}

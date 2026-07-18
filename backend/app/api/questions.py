@@ -19,24 +19,39 @@ def get_question_or_404(question_id: int, db: Session):
 
 
 def validate_options(question_type: str, options):
-    if question_type == "multiple_choice":
-        if not options or len(options) < 2:
+    if question_type in ("multiple_choice", "dropdown"):
+        minimum = 2 if question_type == "multiple_choice" else 1
+        if not options or len(options) < minimum:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Multiple-choice questions require at least two options",
+                detail=f"{question_type} requires at least {minimum} option(s)",
             )
         cleaned_options = [option.strip() for option in options]
-        if any(not option for option in cleaned_options):
+        if any(not option for option in cleaned_options) or len(cleaned_options) != len(set(cleaned_options)):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Multiple-choice options cannot be blank",
+                detail="Options must be non-empty and unique",
             )
         return cleaned_options
+
+    if question_type == "rating":
+        if not options:
+            return ["5"]
+        try:
+            maximum = int(options[0]) if options and len(options) == 1 else 0
+        except (TypeError, ValueError):
+            maximum = 0
+        if maximum < 3 or maximum > 10:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Rating maximum must be between 3 and 10",
+            )
+        return [str(maximum)]
 
     if options is not None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Options are only allowed for multiple-choice questions",
+            detail="Options are not allowed for this question type",
         )
     return None
 
